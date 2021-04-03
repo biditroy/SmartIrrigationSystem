@@ -1,0 +1,119 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "HmtSensor Remote Debug (.NET Core)",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:pickRemoteProcess}",
+      "pipeTransport": {
+        "pipeProgram": "docker",
+        "pipeArgs": [
+          "exec",
+          "-i",
+          "HmtSensor",
+          "sh",
+          "-c"
+        ],
+        "debuggerPath": "~/vsdbg/vsdbg",
+        "pipeCwd": "${workspaceFolder}",
+        "quoteArgs": true
+      },
+      "sourceFileMap": {
+        "/app": "${workspaceFolder}/modules/HmtSensor"
+      },
+      "justMyCode": true
+    },
+    {
+      "name": "HmtSensor Local Debug (.NET Core)",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${workspaceRoot}/modules/HmtSensor/bin/Debug/netcoreapp2.1/HmtSensor.dll",
+      "args": [],
+      "cwd": "${workspaceRoot}/modules/HmtSensor",
+      "internalConsoleOptions": "openOnSessionStart",
+      "stopAtEntry": false,
+      "console": "internalConsole",
+      "env": {
+        "EdgeHubConnectionString": "${config:azure-iot-edge.EdgeHubConnectionString}",
+        "EdgeModuleCACertificateFile": "${config:azure-iot-edge.EdgeModuleCACertificateFile}"
+      }
+    },
+    {
+      "name": "ControlUnit Remote Debug (.NET Core)",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:pickRemoteProcess}",
+      "pipeTransport": {
+        "pipeProgram": "docker",
+        "pipeArgs": [
+          "exec",
+          "-i",
+          "ControlUnit",
+          "sh",
+          "-c"
+        ],
+        "debuggerPath": "~/vsdbg/vsdbg",
+        "pipeCwd": "${workspaceFolder}",
+        "quoteArgs": true
+      },
+      "sourceFileMap": {
+        "/app": "${workspaceFolder}/modules/ControlUnit"
+      },
+      "justMyCode": true
+    },
+    {
+      "name": "ControlUnit Local Debug (.NET Core)",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${workspaceRoot}/modules/ControlUnit/bin/Debug/netcoreapp2.1/ControlUnit.dll",
+      "args": [],
+      "cwd": "${workspaceRoot}/modules/ControlUnit",
+      "internalConsoleOptions": "openOnSessionStart",
+      "stopAtEntry": false,
+      "console": "internalConsole",
+      "env": {
+        "EdgeHubConnectionString": "${config:azure-iot-edge.EdgeHubConnectionString}",
+        "EdgeModuleCACertificateFile": "${config:azure-iot-edge.EdgeModuleCACertificateFile}"
+      }
+    },
+    {
+      "name": "RelayUnit Remote Debug (.NET Core)",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:pickRemoteProcess}",
+      "pipeTransport": {
+        "pipeProgram": "docker",
+        "pipeArgs": [
+          "exec",
+          "-i",
+          "RelayUnit",
+          "sh",
+          "-c"
+        ],
+        "debuggerPath": "~/vsdbg/vsdbg",
+        "pipeCwd": "${workspaceFolder}",
+        "quoteArgs": true
+      },
+      "sourceFileMap": {
+        "/app": "${workspaceFolder}/modules/RelayUnit"
+      },
+      "justMyCode": true
+    },
+    {
+      "name": "RelayUnit Local Debug (.NET Core)",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${workspaceRoot}/modules/RelayUnit/bin/Debug/netcoreapp2.1/RelayUnit.dll",
+      "args": [],
+      "cwd": "${workspaceRoot}/modules/RelayUnit",
+      "internalConsoleOptions": "openOnSessionStart",
+      "stopAtEntry": false,
+      "console": "internalConsole",
+      "env": {
+        "EdgeHubConnectionString": "${config:azure-iot-edge.EdgeHubConnectionString}",
+        "EdgeModuleCACertificateFile": "${config:azure-iot-edge.EdgeModuleCACertificateFile}"
+      }
+    }
+  ]
+}
