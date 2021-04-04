@@ -67,7 +67,7 @@ namespace FlowControlUnit
                 ModuleClient moduleClient = (ModuleClient)userContext;
                 var messageBytes = message.GetBytes();
                 var messageString = Encoding.UTF8.GetString(messageBytes);
-                Console.WriteLine($"Received message {counterValue}: [{messageString}]");
+                Console.WriteLine($"Received message - Body: [{messageString}]");
 
                 // Get the message body.
                 var controlMessage = JsonConvert.DeserializeObject<ControlMessageBody>(messageString);

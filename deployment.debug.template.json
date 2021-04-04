@@ -113,6 +113,12 @@
           "timeToLiveSecs": 7200
         }
       }
+    },
+    "ControlGateway": {
+      "properties.desired": {
+        "TemperatureThreshold": 30,
+        "MoistureThreshold": 10
+      }
     }
   }
 }

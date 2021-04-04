@@ -1,6 +1,6 @@
 namespace HmtSensorUnit
 {
-     using System;
+    using System;
     using System.Runtime.Loader;
     using System.Text;
     using System.Threading;
@@ -10,7 +10,7 @@ namespace HmtSensorUnit
     using HmtSensorUnit.Sensor;
     using Unosquare.RaspberryIO;
 
-        class Program
+    class Program
     {
         static void Main(string[] args)
         {
@@ -47,15 +47,15 @@ namespace HmtSensorUnit
             await moduleClient.OpenAsync();
 
             var thread = new Thread(() => ThreadBody(moduleClient));
-            thread.Start();            
+            thread.Start();
         }
 
         private static async void ThreadBody(ModuleClient moduleClient)
         {
-           var dht = new DHT(Pi.Gpio.Pin07, DHTSensorTypes.DHT11);
+            var dht = new DHT(Pi.Gpio.Pin07, DHTSensorTypes.DHT11);
 
-            int messageCount = 0;
-            while (messageCount < 10)
+            //int messageCount = 0;
+            while (true)
             {
                 try
                 {
@@ -70,9 +70,8 @@ namespace HmtSensorUnit
 
                     string dataBuffer = JsonConvert.SerializeObject(tempData);
                     var eventMessage = new Message(Encoding.UTF8.GetBytes(dataBuffer));
-                    eventMessage.Properties.Add("sequenceNumber", messageCount.ToString());
                     eventMessage.Properties.Add("batchId", Guid.NewGuid().ToString());
-                    Console.WriteLine($"\t{DateTime.Now.ToLocalTime()}> Sending message: {messageCount}, Body: [{dataBuffer}]");
+                    Console.WriteLine($"Sending message - Body: [{dataBuffer}]");
 
                     await moduleClient.SendEventAsync("temperatureOutput", eventMessage);
                 }
@@ -82,7 +81,7 @@ namespace HmtSensorUnit
                 }
 
                 await Task.Delay(10000);
-                messageCount++;
+                //messageCount++;
             }
         }
     }

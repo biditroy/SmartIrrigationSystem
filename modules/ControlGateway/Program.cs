@@ -1,18 +1,19 @@
 namespace ControlGateway
 {
     using System;
+    using Microsoft.Azure.Devices.Shared;
     using System.Runtime.Loader;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Devices.Client;
-    using Microsoft.Azure.Devices.Client.Transport.Mqtt;
     using Newtonsoft.Json;
 
     class Program
     {
         static int counter;
-
+        static double temperatureThreshold { get; set; } = 30;
+        static double moistureThreshold { get; set; } = 10;
         static void Main(string[] args)
         {
             Init().Wait();
@@ -40,7 +41,7 @@ namespace ControlGateway
         /// </summary>
         static async Task Init()
         {
-            MqttTransportSettings mqttSetting = new MqttTransportSettings(TransportType.Mqtt_Tcp_Only);
+            AmqpTransportSettings mqttSetting = new AmqpTransportSettings(TransportType.Amqp_Tcp_Only);
             ITransportSettings[] settings = { mqttSetting };
 
             // Open a connection to the Edge runtime
@@ -48,8 +49,44 @@ namespace ControlGateway
             await ioTHubModuleClient.OpenAsync();
             Console.WriteLine("IoT Hub module client initialized.");
 
+            // Read the TemperatureThreshold value from the module twin's desired properties
+            var moduleTwin = await ioTHubModuleClient.GetTwinAsync();
+            await OnDesiredPropertiesUpdate(moduleTwin.Properties.Desired, ioTHubModuleClient);
+
+            // Attach a callback for updates to the module twin's desired properties.
+            await ioTHubModuleClient.SetDesiredPropertyUpdateCallbackAsync(OnDesiredPropertiesUpdate, null);
+
             // Register callback to be called when a message is received by the module
             await ioTHubModuleClient.SetInputMessageHandlerAsync("input1", ProcessMessage, ioTHubModuleClient);
+        }
+
+        static Task OnDesiredPropertiesUpdate(TwinCollection desiredProperties, object userContext)
+        {
+            try
+            {
+                Console.WriteLine("Desired property change:");
+                Console.WriteLine(JsonConvert.SerializeObject(desiredProperties));
+
+                if (desiredProperties["TemperatureThreshold"] != null)
+                    temperatureThreshold = desiredProperties["TemperatureThreshold"];
+                if (desiredProperties["MoistureThreshold"] != null)
+                    moistureThreshold = desiredProperties["MoistureThreshold"];
+
+            }
+            catch (AggregateException ex)
+            {
+                foreach (Exception exception in ex.InnerExceptions)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Error when receiving desired property: {0}", exception);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Error when receiving desired property: {0}", ex.Message);
+            }
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -65,13 +102,14 @@ namespace ControlGateway
                 ModuleClient moduleClient = (ModuleClient)userContext;
                 var messageBytes = message.GetBytes();
                 var messageString = Encoding.UTF8.GetString(messageBytes);
-                Console.WriteLine($"Received message {counterValue}: [{messageString}]");
+                Console.WriteLine($"Received message - Body: [{messageString}]");
 
                 // Get the message body.
                 var sensorMessage = JsonConvert.DeserializeObject<SensorMessageBody>(messageString);
 
-                if (sensorMessage != null && sensorMessage.Temperature > 30.0 && sensorMessage.Moisture > 0.0)
+                if (sensorMessage != null && sensorMessage.Temperature > temperatureThreshold && sensorMessage.Moisture > moistureThreshold)
                 {
+                    Console.WriteLine($"Preparing for Sending of Control message");
                     var tempData = new ControlMessageBody
                     {
                         FlowDuration = 5,
