@@ -8,12 +8,12 @@ namespace FlowControlUnit
     using Microsoft.Azure.Devices.Client;
     using Microsoft.Azure.Devices.Client.Transport.Mqtt;
     using Newtonsoft.Json;
-    using Unosquare.RaspberryIO;
-    using Unosquare.RaspberryIO.Gpio;
+    using System.Device.Gpio;
 
     class Program
     {
         static int counter;
+        static int relayGpioPin = 21;
 
         static void Main(string[] args)
         {
@@ -74,14 +74,18 @@ namespace FlowControlUnit
 
                 if (controlMessage != null && controlMessage.FlowDuration > 0.0)
                 {
-                    var relayPin = Pi.Gpio[17];
-                    relayPin.PinMode = GpioPinDriveMode.Output;
+                    Console.WriteLine($"Water pump will be running for {controlMessage.FlowDuration} ms");
                     
-                    relayPin.Write(true);
-                    await Task.Delay(controlMessage.FlowDuration);
-                    relayPin.Write(false);
+                    var gpioCon = new GpioController();
+                    gpioCon.OpenPin(relayGpioPin, PinMode.Output);
 
-                    await moduleClient.SendEventAsync("output1", message);
+                    gpioCon.Write(relayGpioPin, PinValue.Low);
+
+                    await Task.Delay(controlMessage.FlowDuration);
+
+                    gpioCon.Write(relayGpioPin, PinValue.High);
+
+                    //await moduleClient.SendEventAsync("output1", message);
                 }
 
                 // Indicate that the message treatment is completed.
@@ -92,7 +96,7 @@ namespace FlowControlUnit
                 foreach (Exception exception in ex.InnerExceptions)
                 {
                     Console.WriteLine();
-                    Console.WriteLine("Error in sample: {0}", exception);
+                    Console.WriteLine("Aggregate Error: {0}", exception);
                 }
                 // Indicate that the message treatment is not completed.
                 var moduleClient = (ModuleClient)userContext;
@@ -101,7 +105,7 @@ namespace FlowControlUnit
             catch (Exception ex)
             {
                 Console.WriteLine();
-                Console.WriteLine("Error in sample: {0}", ex.Message);
+                Console.WriteLine("General Error: {0}", ex);
                 // Indicate that the message treatment is not completed.
                 ModuleClient moduleClient = (ModuleClient)userContext;
                 return MessageResponse.Abandoned;

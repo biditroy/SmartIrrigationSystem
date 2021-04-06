@@ -54,7 +54,6 @@ namespace HmtSensorUnit
         {
             var dht = new DHT(Pi.Gpio.Pin07, DHTSensorTypes.DHT11);
 
-            //int messageCount = 0;
             while (true)
             {
                 try
@@ -80,8 +79,7 @@ namespace HmtSensorUnit
 
                 }
 
-                await Task.Delay(10000);
-                //messageCount++;
+                await Task.Delay(15000);
             }
         }
     }

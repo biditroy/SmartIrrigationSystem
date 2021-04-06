@@ -112,7 +112,7 @@ namespace ControlGateway
                     Console.WriteLine($"Preparing for Sending of Control message");
                     var tempData = new ControlMessageBody
                     {
-                        FlowDuration = 5,
+                        FlowDuration = 5000,
                         Temperature = sensorMessage.Temperature,
                         Humidity = sensorMessage.Humidity,
                         Moisture = sensorMessage.Moisture,
