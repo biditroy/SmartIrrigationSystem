@@ -52,17 +52,17 @@ namespace HmtSensorUnit
 
         private static async void ThreadBody(ModuleClient moduleClient)
         {
-            var dht = new DHT(Pi.Gpio.Pin07, DHTSensorTypes.DHT11);
-
             while (true)
             {
                 try
                 {
-                    var htData = dht.ReadData();
+                    var moisture = CollectMoistureData();
+                    var humTemp = CollectTemperatureHumidityData();
                     var tempData = new MessageBody
                     {
-                        Temperature = htData.TempCelcius,
-                        Humidity = htData.Humidity,
+                        Temperature = humTemp.TempCelcius,
+                        Humidity = humTemp.Humidity,
+                        Moisture = moisture,
                         TimeCreated = DateTime.UtcNow,
                         Identifier = "HmtSensor"
                     };
@@ -81,6 +81,43 @@ namespace HmtSensorUnit
 
                 await Task.Delay(15000);
             }
+        }
+
+        private static double CollectMoistureData()
+        {
+            var mSensor = new MOISTURE();
+            // double samples = 0;
+            // int counter = 0;
+            // while (counter < 20)
+            // {
+            //     samples = samples + mSensor.ReadData();
+            //     Thread.Sleep(500);
+            //     counter++;
+            // }
+            // var rawVal = samples / 20.0;
+            var rawVal = mSensor.ReadData();
+            return linear(rawVal, 480, 1023, 100, 0);
+        }
+
+        private static DHTData CollectTemperatureHumidityData()
+        {
+            var dht = new DHT(Pi.Gpio.Pin07, DHTSensorTypes.DHT11);            
+            var htData = dht.ReadData();
+            return htData;
+        }
+
+        static double linear(double x, double x0, double x1, double y0, double y1)
+        {
+            if ((x1 - x0) == 0)
+            {
+                return (y0 + y1) / 2;
+            }
+            return y0 + (x - x0) * (y1 - y0) / (x1 - x0);
+        }
+        private void WaitMicroseconds(int microseconds)
+        {
+            var until = DateTime.UtcNow.Ticks + (microseconds * 10);
+            while (DateTime.UtcNow.Ticks < until) { }
         }
     }
 
