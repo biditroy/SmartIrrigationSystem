@@ -122,6 +122,11 @@ namespace ControlGateway
                     string dataBuffer = JsonConvert.SerializeObject(tempData);
                     var controlMessage = new Message(Encoding.UTF8.GetBytes(dataBuffer));
                     await moduleClient.SendEventAsync("controlOutput", controlMessage);
+                    await moduleClient.SendEventAsync("remote", controlMessage);
+                }
+                else
+                {
+                    await moduleClient.SendEventAsync("remote", message);
                 }
 
                 // Indicate that the message treatment is completed.
@@ -132,7 +137,7 @@ namespace ControlGateway
                 foreach (Exception exception in ex.InnerExceptions)
                 {
                     Console.WriteLine();
-                    Console.WriteLine("Error in sample: {0}", exception);
+                    Console.WriteLine("Error in aggregate: {0}", exception);
                 }
                 // Indicate that the message treatment is not completed.
                 var moduleClient = (ModuleClient)userContext;
@@ -141,7 +146,7 @@ namespace ControlGateway
             catch (Exception ex)
             {
                 Console.WriteLine();
-                Console.WriteLine("Error in sample: {0}", ex.Message);
+                Console.WriteLine("General Error: {0}", ex.Message);
                 // Indicate that the message treatment is not completed.
                 ModuleClient moduleClient = (ModuleClient)userContext;
                 return MessageResponse.Abandoned;

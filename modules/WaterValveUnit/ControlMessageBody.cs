@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Newtonsoft.Json;
 
-namespace FlowControlUnit
+namespace WaterValveUnit
 {
     class ControlMessageBody
     {

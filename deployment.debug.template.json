@@ -85,13 +85,13 @@
               }
             }
           },
-          "FlowControlUnit": {
+          "WaterValveUnit": {
             "version": "1.0",
             "type": "docker",
             "status": "running",
             "restartPolicy": "always",
             "settings": {
-              "image": "${MODULES.FlowControlUnit.debug}",
+              "image": "${MODULES.WaterValveUnit.debug}",
               "createOptions": {
                 "HostConfig": {
                   "Privileged": true
@@ -107,7 +107,8 @@
         "schemaVersion": "1.0",
         "routes": {
           "HmtSensorUnitToControlGateway": "FROM /messages/modules/HmtSensorUnit/outputs/temperatureOutput INTO BrokeredEndpoint(\"/modules/ControlGateway/inputs/input1\")",
-          "ControlGatewayToFlowControlUnit": "FROM /messages/modules/ControlGateway/outputs/output1 INTO BrokeredEndpoint(\"/modules/FlowControlUnit/inputs/input1\")"
+          "ControlGatewayToWaterValveUnit": "FROM /messages/modules/ControlGateway/outputs/output1 INTO BrokeredEndpoint(\"/modules/WaterValveUnit/inputs/input1\")",
+          "ControlGatewayToIoTHub": "FROM /messages/modules/ControlGateway/outputs/remote INTO $upstream"
         },
         "storeAndForwardConfiguration": {
           "timeToLiveSecs": 7200
