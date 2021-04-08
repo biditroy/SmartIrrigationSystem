@@ -14,6 +14,8 @@ namespace ControlGateway
         static int counter;
         static double temperatureThreshold { get; set; } = 30;
         static double moistureThreshold { get; set; } = 10;
+        static string customerId { get; set; } = "CSNEW";
+        static string deviceId { get; set; } = "DEVNEW";
         static void Main(string[] args)
         {
             Init().Wait();
@@ -68,8 +70,15 @@ namespace ControlGateway
 
                 if (desiredProperties["TemperatureThreshold"] != null)
                     temperatureThreshold = desiredProperties["TemperatureThreshold"];
+
                 if (desiredProperties["MoistureThreshold"] != null)
                     moistureThreshold = desiredProperties["MoistureThreshold"];
+
+                if (desiredProperties["CustomerID"] != null)
+                    customerId = desiredProperties["CustomerID"];
+
+                if (desiredProperties["DeviceID"] != null)
+                    deviceId = desiredProperties["DeviceID"];
 
             }
             catch (AggregateException ex)
@@ -104,29 +113,34 @@ namespace ControlGateway
                 Console.WriteLine($"Received message - Body: [{messageString}]");
 
                 // Get the message body.
-                var sensorMessage = JsonConvert.DeserializeObject<SensorMessageBody>(messageString);
+                var incomingMessage = JsonConvert.DeserializeObject<ControlMessageBody>(messageString);
 
-                if (sensorMessage != null && sensorMessage.Temperature > temperatureThreshold && sensorMessage.Moisture > moistureThreshold)
+                if (incomingMessage != null && incomingMessage.Temperature > temperatureThreshold && incomingMessage.Moisture > moistureThreshold)
                 {
                     Console.WriteLine($"Preparing for Sending of Control message");
                     var tempData = new ControlMessageBody
                     {
                         FlowDuration = 5000,
-                        Temperature = sensorMessage.Temperature,
-                        Humidity = sensorMessage.Humidity,
-                        Moisture = sensorMessage.Moisture,
+                        Temperature = incomingMessage.Temperature,
+                        Humidity = incomingMessage.Humidity,
+                        Moisture = incomingMessage.Moisture,
                         TimeCreated = DateTime.UtcNow,
-                        Identifier = "ControlGateway"
+                        SourceTAG = "ControlGateway",
+                        CustomerID = customerId,
+                        DeviceID = deviceId
                     };
 
                     string dataBuffer = JsonConvert.SerializeObject(tempData);
                     var controlMessage = new Message(Encoding.UTF8.GetBytes(dataBuffer));
                     await moduleClient.SendEventAsync("controlOutput", controlMessage);
-                    await moduleClient.SendEventAsync("remote", controlMessage);
                 }
                 else
                 {
-                    await moduleClient.SendEventAsync("remote", message);
+                    incomingMessage.CustomerID = customerId;
+                    incomingMessage.DeviceID = deviceId;
+                    string dataBuffer = JsonConvert.SerializeObject(incomingMessage);
+                    var noControlMessage = new Message(Encoding.UTF8.GetBytes(dataBuffer));
+                    await moduleClient.SendEventAsync("nonControlOutput", noControlMessage);
                 }
 
                 // Indicate that the message treatment is completed.

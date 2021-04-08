@@ -25,10 +25,13 @@ namespace HmtSensorUnit
         [JsonProperty(PropertyName = "Moisture")]
         public double Moisture { get; set; }
 
+        [JsonProperty(PropertyName = "Light")]
+        public double Light { get; set; }
+
         [JsonProperty(PropertyName = "TimeCreated")]
         public DateTime TimeCreated { get; set; }
 
-        [JsonProperty(PropertyName = "Identifier")]
-        public string Identifier { get; set; }
+        [JsonProperty(PropertyName = "SourceTAG")]
+        public string SourceTAG { get; set; }
     }
 }

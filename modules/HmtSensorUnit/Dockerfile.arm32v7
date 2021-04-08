@@ -13,5 +13,5 @@ COPY --from=build-env /app/out ./
 
 # RUN useradd -ms /bin/bash moduleuser
 # USER moduleuser
-
+ENV TZ Asia/Kolkata
 ENTRYPOINT ["dotnet", "HmtSensorUnit.dll"]

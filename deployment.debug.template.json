@@ -108,7 +108,7 @@
         "routes": {
           "HmtSensorUnitToControlGateway": "FROM /messages/modules/HmtSensorUnit/outputs/temperatureOutput INTO BrokeredEndpoint(\"/modules/ControlGateway/inputs/input1\")",
           "ControlGatewayToWaterValveUnit": "FROM /messages/modules/ControlGateway/outputs/output1 INTO BrokeredEndpoint(\"/modules/WaterValveUnit/inputs/input1\")",
-          "ControlGatewayToIoTHub": "FROM /messages/modules/ControlGateway/outputs/remote INTO $upstream"
+          "ControlGatewayToIoTHub": "FROM /messages/modules/ControlGateway/outputs/* INTO $upstream"
         },
         "storeAndForwardConfiguration": {
           "timeToLiveSecs": 7200
@@ -117,11 +117,14 @@
     },
     "HmtSensorUnit": {
       "properties.desired": {
-        "FullMoistureBaseLineValue": 480
+        "FullMoistureBaseLineValue": 480,
+        "DataCollectionIntervalInSeconds":15
       }
     },
     "ControlGateway": {
       "properties.desired": {
+        "CustomerID":"CSNEW",
+        "DeviceID":"DEVNEW",
         "TemperatureThreshold": 30,
         "MoistureThreshold": 10
       }

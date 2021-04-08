@@ -16,6 +16,7 @@ namespace HmtSensorUnit
     class Program
     {
         static double fullMoistureBaseLineValue { get; set; } = 480;
+        static int dataCollectionIntervalInSeconds { get; set; } = 15;
         static void Main(string[] args)
         {
             Init().Wait();
@@ -70,6 +71,9 @@ namespace HmtSensorUnit
                 if (desiredProperties["FullMoistureBaseLineValue"] != null)
                     fullMoistureBaseLineValue = desiredProperties["FullMoistureBaseLineValue"];
 
+                if (desiredProperties["DataCollectionIntervalInSeconds"] != null)
+                    dataCollectionIntervalInSeconds = desiredProperties["DataCollectionIntervalInSeconds"];
+
             }
             catch (AggregateException ex)
             {
@@ -100,8 +104,9 @@ namespace HmtSensorUnit
                     Temperature = humTemp.TempCelcius,
                     Humidity = humTemp.Humidity,
                     Moisture = moisture,
-                    TimeCreated = DateTime.UtcNow,
-                    Identifier = "HmtSensor"
+                    //TimeCreated = DateTime.UtcNow,
+                    TimeCreated = DateTime.Now,
+                    SourceTAG = "HmtSensor"
                 };
 
                 string dataBuffer = JsonConvert.SerializeObject(tempData);
@@ -111,8 +116,7 @@ namespace HmtSensorUnit
 
                 await moduleClient.SendEventAsync("temperatureOutput", eventMessage);
 
-
-                await Task.Delay(15000);
+                await Task.Delay(dataCollectionIntervalInSeconds * 1000);
             }
         }
 
@@ -150,14 +154,20 @@ namespace HmtSensorUnit
         private static DHTData CollectTemperatureHumidityData()
         {
             DHTData htData = new DHTData();
-            try
+            int counter = 0;
+            while (htData.TempCelcius == 0.0 && counter < 20)
             {
-                var dhtSensor = new DHT(Pi.Gpio.Pin07, DHTSensorTypes.DHT11);
-                htData = dhtSensor.ReadData();
-            }
-            catch (DHTException)
-            {
+                try
+                {
+                    var dhtSensor = new DHT(Pi.Gpio.Pin07, DHTSensorTypes.DHT11);
+                    htData = dhtSensor.ReadData();
+                }
+                catch (DHTException)
+                {
 
+                }
+                counter++;
+                WaitMiliSeconds(1000);
             }
             return htData;
         }
@@ -170,9 +180,9 @@ namespace HmtSensorUnit
             }
             return y0 + (x - x0) * (y1 - y0) / (x1 - x0);
         }
-        private void WaitMicroseconds(int microseconds)
+        private static void WaitMiliSeconds(int miliseconds)
         {
-            var until = DateTime.UtcNow.Ticks + (microseconds * 10);
+            var until = DateTime.UtcNow.AddMilliseconds(miliseconds).Ticks;
             while (DateTime.UtcNow.Ticks < until) { }
         }
     }
