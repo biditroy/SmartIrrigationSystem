@@ -32,5 +32,7 @@ namespace ControlGateway
 
         [JsonProperty(PropertyName = "DeviceID")]
         public string DeviceID { get; set; }
+        [JsonProperty(PropertyName = "PlantID")]
+        public string PlantID { get; set; }
     }
 }

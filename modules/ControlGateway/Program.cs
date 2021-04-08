@@ -120,14 +120,15 @@ namespace ControlGateway
                     Console.WriteLine($"Preparing for Sending of Control message");
                     var tempData = new ControlMessageBody
                     {
-                        FlowDuration = 5000,
+                        FlowDuration = 3000,
                         Temperature = incomingMessage.Temperature,
                         Humidity = incomingMessage.Humidity,
                         Moisture = incomingMessage.Moisture,
                         TimeCreated = DateTime.UtcNow,
                         SourceTAG = "ControlGateway",
                         CustomerID = customerId,
-                        DeviceID = deviceId
+                        DeviceID = deviceId,
+                        PlantID = ""
                     };
 
                     string dataBuffer = JsonConvert.SerializeObject(tempData);
