@@ -64,8 +64,7 @@ namespace ControlGateway
         {
             try
             {
-                Console.WriteLine("Desired property change:");
-                Console.WriteLine(JsonConvert.SerializeObject(desiredProperties));
+                Console.WriteLine($"Desired property change: {JsonConvert.SerializeObject(desiredProperties)}");
 
                 if (desiredProperties["TemperatureThreshold"] != null)
                     temperatureThreshold = desiredProperties["TemperatureThreshold"];

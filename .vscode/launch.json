@@ -114,6 +114,44 @@
         "EdgeHubConnectionString": "${config:azure-iot-edge.EdgeHubConnectionString}",
         "EdgeModuleCACertificateFile": "${config:azure-iot-edge.EdgeModuleCACertificateFile}"
       }
+    },
+    {
+      "name": "SoilMoisterSensorTest Remote Debug (.NET Core)",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:pickRemoteProcess}",
+      "pipeTransport": {
+        "pipeProgram": "docker",
+        "pipeArgs": [
+          "exec",
+          "-i",
+          "SoilMoisterSensorTest",
+          "sh",
+          "-c"
+        ],
+        "debuggerPath": "~/vsdbg/vsdbg",
+        "pipeCwd": "${workspaceFolder}",
+        "quoteArgs": true
+      },
+      "sourceFileMap": {
+        "/app": "${workspaceFolder}/modules/SoilMoisterSensorTest"
+      },
+      "justMyCode": true
+    },
+    {
+      "name": "SoilMoisterSensorTest Local Debug (.NET Core)",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${workspaceRoot}/modules/SoilMoisterSensorTest/bin/Debug/netcoreapp3.1/SoilMoisterSensorTest.dll",
+      "args": [],
+      "cwd": "${workspaceRoot}/modules/SoilMoisterSensorTest",
+      "internalConsoleOptions": "openOnSessionStart",
+      "stopAtEntry": false,
+      "console": "internalConsole",
+      "env": {
+        "EdgeHubConnectionString": "${config:azure-iot-edge.EdgeHubConnectionString}",
+        "EdgeModuleCACertificateFile": "${config:azure-iot-edge.EdgeModuleCACertificateFile}"
+      }
     }
   ]
 }

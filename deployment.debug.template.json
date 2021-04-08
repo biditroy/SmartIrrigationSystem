@@ -114,6 +114,11 @@
         }
       }
     },
+    "HmtSensorUnit": {
+      "properties.desired": {
+        "FullMoistureBaseLineValue": 480
+      }
+    },
     "ControlGateway": {
       "properties.desired": {
         "TemperatureThreshold": 30,

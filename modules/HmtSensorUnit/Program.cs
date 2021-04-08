@@ -6,12 +6,16 @@ namespace HmtSensorUnit
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Devices.Client;
+    using Microsoft.Azure.Devices.Shared;
     using Newtonsoft.Json;
     using HmtSensorUnit.Sensor;
     using Unosquare.RaspberryIO;
+    using System.Device.Spi;
+    using Iot.Device.Adc;
 
     class Program
     {
+        static double fullMoistureBaseLineValue { get; set; } = 480;
         static void Main(string[] args)
         {
             Init().Wait();
@@ -46,38 +50,67 @@ namespace HmtSensorUnit
             ModuleClient moduleClient = await ModuleClient.CreateFromEnvironmentAsync(settings);
             await moduleClient.OpenAsync();
 
+            // Read the TemperatureThreshold value from the module twin's desired properties
+            var moduleTwin = await moduleClient.GetTwinAsync();
+            await OnDesiredPropertiesUpdate(moduleTwin.Properties.Desired, moduleClient);
+
+            // Attach a callback for updates to the module twin's desired properties.
+            await moduleClient.SetDesiredPropertyUpdateCallbackAsync(OnDesiredPropertiesUpdate, null);
+
             var thread = new Thread(() => ThreadBody(moduleClient));
             thread.Start();
+        }
+
+        static Task OnDesiredPropertiesUpdate(TwinCollection desiredProperties, object userContext)
+        {
+            try
+            {
+                Console.WriteLine($"Desired property change: {JsonConvert.SerializeObject(desiredProperties)}");
+
+                if (desiredProperties["FullMoistureBaseLineValue"] != null)
+                    fullMoistureBaseLineValue = desiredProperties["FullMoistureBaseLineValue"];
+
+            }
+            catch (AggregateException ex)
+            {
+                foreach (Exception exception in ex.InnerExceptions)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Error when receiving desired property: {0}", exception);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Error when receiving desired property: {0}", ex.Message);
+            }
+            return Task.CompletedTask;
         }
 
         private static async void ThreadBody(ModuleClient moduleClient)
         {
             while (true)
             {
-                try
+
+                var moisture = CollectMoistureData();
+                var humTemp = CollectTemperatureHumidityData();
+
+                var tempData = new MessageBody
                 {
-                    var moisture = CollectMoistureData();
-                    var humTemp = CollectTemperatureHumidityData();
-                    var tempData = new MessageBody
-                    {
-                        Temperature = humTemp.TempCelcius,
-                        Humidity = humTemp.Humidity,
-                        Moisture = moisture,
-                        TimeCreated = DateTime.UtcNow,
-                        Identifier = "HmtSensor"
-                    };
+                    Temperature = humTemp.TempCelcius,
+                    Humidity = humTemp.Humidity,
+                    Moisture = moisture,
+                    TimeCreated = DateTime.UtcNow,
+                    Identifier = "HmtSensor"
+                };
 
-                    string dataBuffer = JsonConvert.SerializeObject(tempData);
-                    var eventMessage = new Message(Encoding.UTF8.GetBytes(dataBuffer));
-                    eventMessage.Properties.Add("batchId", Guid.NewGuid().ToString());
-                    Console.WriteLine($"Sending message - Body: [{dataBuffer}]");
+                string dataBuffer = JsonConvert.SerializeObject(tempData);
+                var eventMessage = new Message(Encoding.UTF8.GetBytes(dataBuffer));
+                eventMessage.Properties.Add("batchId", Guid.NewGuid().ToString());
+                Console.WriteLine($"Sending message - Body: [{dataBuffer}]");
 
-                    await moduleClient.SendEventAsync("temperatureOutput", eventMessage);
-                }
-                catch (DHTException)
-                {
+                await moduleClient.SendEventAsync("temperatureOutput", eventMessage);
 
-                }
 
                 await Task.Delay(15000);
             }
@@ -85,24 +118,47 @@ namespace HmtSensorUnit
 
         private static double CollectMoistureData()
         {
-            var mSensor = new MOISTURE();
-            // double samples = 0;
-            // int counter = 0;
-            // while (counter < 20)
-            // {
-            //     samples = samples + mSensor.ReadData();
-            //     Thread.Sleep(500);
-            //     counter++;
-            // }
-            // var rawVal = samples / 20.0;
-            var rawVal = mSensor.ReadData();
-            return linear(rawVal, 480, 1023, 100, 0);
+            double moisturePcnt = 0.0;
+            double sensorRawValue = 0.0;
+            try
+            {
+                var hardwareSpiSettings = new SpiConnectionSettings(0, 0)
+                {
+                    ClockFrequency = 1350000
+                };
+
+                using (SpiDevice spi = SpiDevice.Create(hardwareSpiSettings))
+                using (Mcp3008 mcp = new Mcp3008(spi))
+                {
+                    sensorRawValue = mcp.Read(0);
+                }
+
+                if (sensorRawValue < fullMoistureBaseLineValue)
+                {
+                    sensorRawValue = fullMoistureBaseLineValue;
+                }
+            }
+            catch (Exception)
+            {
+
+            }
+
+            moisturePcnt = linear(sensorRawValue, fullMoistureBaseLineValue, 1023, 100, 0);
+            return moisturePcnt;
         }
 
         private static DHTData CollectTemperatureHumidityData()
         {
-            var dht = new DHT(Pi.Gpio.Pin07, DHTSensorTypes.DHT11);            
-            var htData = dht.ReadData();
+            DHTData htData = new DHTData();
+            try
+            {
+                var dhtSensor = new DHT(Pi.Gpio.Pin07, DHTSensorTypes.DHT11);
+                htData = dhtSensor.ReadData();
+            }
+            catch (DHTException)
+            {
+
+            }
             return htData;
         }
 
