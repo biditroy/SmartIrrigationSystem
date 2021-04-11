@@ -126,7 +126,9 @@
         "CustomerID":"CSNEW",
         "DeviceID":"DEVNEW",
         "TemperatureThreshold": 30,
-        "MoistureThreshold": 10
+        "MoistureThreshold": 10,
+        "BioConfigurationDataDirectory":"/app/sis_data/",
+        "BioConfigurationApiUrl":"http://calibarhack21.azurewebsites.net/smartirrigationsystem/"
       }
     }
   }

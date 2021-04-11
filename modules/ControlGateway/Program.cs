@@ -13,9 +13,12 @@ namespace ControlGateway
     {
         static int counter;
         static double temperatureThreshold { get; set; } = 30;
-        static double moistureThreshold { get; set; } = 10;
+        static double moistureThreshold { get; set; } = 30;
         static string customerId { get; set; } = "CSNEW";
         static string deviceId { get; set; } = "DEVNEW";
+        static string bioConfigDataDir { get; set; } = "/app/sis_data/";
+        static string bioConfigApiUrl { get; set; } = "";
+        static double pumpSpeedPerSecond { get; set; } = 21;
         static void Main(string[] args)
         {
             Init().Wait();
@@ -80,6 +83,15 @@ namespace ControlGateway
                 if (desiredProperties["DeviceID"] != null)
                     deviceId = desiredProperties["DeviceID"];
 
+                if (desiredProperties["BioConfigurationDataDirectory"] != null)
+                    bioConfigDataDir = desiredProperties["BioConfigurationDataDirectory"];
+
+                if (desiredProperties["BioConfigurationApiUrl"] != null)
+                    bioConfigApiUrl = desiredProperties["BioConfigurationApiUrl"];
+
+                    if (desiredProperties["PumpSpeedPerSecond"] != null)
+                    pumpSpeedPerSecond = desiredProperties["PumpSpeedPerSecond"];
+
             }
             catch (AggregateException ex)
             {
@@ -115,33 +127,55 @@ namespace ControlGateway
                 // Get the message body.
                 var incomingMessage = JsonConvert.DeserializeObject<ControlMessageBody>(messageString);
 
-                if (incomingMessage != null && incomingMessage.Temperature > temperatureThreshold && incomingMessage.Moisture > moistureThreshold)
+                using (BioConfigProvider biopro = new BioConfigProvider())
                 {
-                    Console.WriteLine($"Preparing for Sending of Control message");
-                    var tempData = new ControlMessageBody
-                    {
-                        FlowDuration = 3000,
-                        Temperature = incomingMessage.Temperature,
-                        Humidity = incomingMessage.Humidity,
-                        Moisture = incomingMessage.Moisture,
-                        TimeCreated = DateTime.UtcNow,
-                        SourceTAG = "ControlGateway",
-                        CustomerID = customerId,
-                        DeviceID = deviceId,
-                        PlantID = ""
-                    };
+                    biopro.BioConfigurationDir = bioConfigDataDir;
+                    biopro.BioConfigurationApiUrl = bioConfigApiUrl;
 
-                    string dataBuffer = JsonConvert.SerializeObject(tempData);
-                    var controlMessage = new Message(Encoding.UTF8.GetBytes(dataBuffer));
-                    await moduleClient.SendEventAsync("controlOutput", controlMessage);
-                }
-                else
-                {
-                    incomingMessage.CustomerID = customerId;
-                    incomingMessage.DeviceID = deviceId;
-                    string dataBuffer = JsonConvert.SerializeObject(incomingMessage);
-                    var noControlMessage = new Message(Encoding.UTF8.GetBytes(dataBuffer));
-                    await moduleClient.SendEventAsync("nonControlOutput", noControlMessage);
+                    Console.WriteLine($"Dir: {biopro.BioConfigurationDir}, Api:{biopro.BioConfigurationApiUrl}]");
+
+                    var bioData = biopro.GetBioConfiguration(customerId, deviceId);
+                    Console.WriteLine($"Bio Data Count:{bioData.Count}");
+                    foreach (var bd in bioData)
+                    {
+                        if (incomingMessage != null && incomingMessage.Moisture <= moistureThreshold)
+                        {
+                            using (WaterController wc = new WaterController())
+                            {
+                                wc.PumpSpeedPerSecond = pumpSpeedPerSecond;
+                                var calculatedFlow = wc.GetWaterFlowDuration(incomingMessage.Temperature, incomingMessage.Humidity, incomingMessage.Moisture, bd);
+                                if (calculatedFlow > 0)
+                                {
+                                    Console.WriteLine($"Preparing for water for {calculatedFlow} sec(s)");
+                                    var tempData = new ControlMessageBody
+                                    {
+                                        FlowDuration = calculatedFlow,
+                                        Temperature = incomingMessage.Temperature,
+                                        Humidity = incomingMessage.Humidity,
+                                        Moisture = incomingMessage.Moisture,
+                                        TimeCreated = DateTime.UtcNow,
+                                        SourceTAG = "ControlGateway",
+                                        CustomerID = customerId,
+                                        DeviceID = deviceId,
+                                        PlantID = bd.PlanID
+                                    };
+
+                                    string dataBuffer = JsonConvert.SerializeObject(tempData);
+                                    var controlMessage = new Message(Encoding.UTF8.GetBytes(dataBuffer));
+                                    await moduleClient.SendEventAsync("controlOutput", controlMessage);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            incomingMessage.CustomerID = customerId;
+                            incomingMessage.DeviceID = deviceId;
+                            string dataBuffer = JsonConvert.SerializeObject(incomingMessage);
+                            var noControlMessage = new Message(Encoding.UTF8.GetBytes(dataBuffer));
+                            await moduleClient.SendEventAsync("nonControlOutput", noControlMessage);
+                        }
+                    }
+
                 }
 
                 // Indicate that the message treatment is completed.

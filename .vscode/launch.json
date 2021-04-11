@@ -11,7 +11,7 @@
         "pipeArgs": [
           "exec",
           "-i",
-          "HmtSensor",
+          "HmtSensorUnit",
           "sh",
           "-c"
         ],
@@ -49,7 +49,7 @@
         "pipeArgs": [
           "exec",
           "-i",
-          "ControlUnit",
+          "ControlGateway",
           "sh",
           "-c"
         ],
@@ -87,7 +87,7 @@
         "pipeArgs": [
           "exec",
           "-i",
-          "RelayUnit",
+          "WaterValveUnit",
           "sh",
           "-c"
         ],
@@ -106,7 +106,7 @@
       "request": "launch",
       "program": "${workspaceRoot}/modules/WaterValveUnit/bin/Debug/netcoreapp2.1/WaterValveUnit.dll",
       "args": [],
-      "cwd": "${workspaceRoot}/modules/RelayUnit",
+      "cwd": "${workspaceRoot}/modules/WaterValveUnit",
       "internalConsoleOptions": "openOnSessionStart",
       "stopAtEntry": false,
       "console": "internalConsole",
@@ -115,6 +115,45 @@
         "EdgeModuleCACertificateFile": "${config:azure-iot-edge.EdgeModuleCACertificateFile}"
       }
     }
+
+    ,
+    {
+      "name": "IngestBioConfiguration Remote Debug (.NET Core)",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:pickRemoteProcess}",
+      "pipeTransport": {
+        "pipeProgram": "docker",
+        "pipeArgs": [
+          "exec",
+          "-i",
+          "IngestBioConfiguration",
+          "sh",
+          "-c"
+        ],
+        "debuggerPath": "~/vsdbg/vsdbg",
+        "pipeCwd": "${workspaceFolder}",
+        "quoteArgs": true
+      },
+      "sourceFileMap": {
+        "/app": "${workspaceFolder}/modules/IngestBioConfiguration"
+      },
+      "justMyCode": true
+    },
+    {
+      "name": "IngestBioConfiguration Local Debug (.NET Core)",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${workspaceRoot}/modules/WaterValveUnit/bin/Debug/netcoreapp2.1/IngestBioConfiguration.dll",
+      "args": [],
+      "cwd": "${workspaceRoot}/modules/IngestBioConfiguration",
+      "internalConsoleOptions": "openOnSessionStart",
+      "stopAtEntry": false,
+      "console": "internalConsole",
+      "env": {
+        "EdgeHubConnectionString": "${config:azure-iot-edge.EdgeHubConnectionString}",
+        "EdgeModuleCACertificateFile": "${config:azure-iot-edge.EdgeModuleCACertificateFile}"
+      }
     }
   ]
 }

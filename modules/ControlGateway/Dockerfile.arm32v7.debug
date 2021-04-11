@@ -20,5 +20,6 @@ RUN dotnet publish ControlGateway.csproj -c Debug -o out
 FROM base
 WORKDIR /app
 COPY --from=build-env /app/out ./
+RUN mkdir /app/sis_data
 ENV TZ Asia/Kolkata
 ENTRYPOINT ["dotnet", "ControlGateway.dll"]
