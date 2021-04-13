@@ -13,6 +13,7 @@ namespace ControlGateway
     {
         public string BioConfigurationDir { get; set; }
         public string BioConfigurationApiUrl { get; set; }
+        public bool EnableBioConfigCache { get; set; }
         public List<BioConfiguration> GetBioConfiguration(string customerId, string deviceId)
         {
             List<BioConfiguration> bioConfigData = new List<BioConfiguration>();
@@ -20,7 +21,8 @@ namespace ControlGateway
             {
                 string bioConfigFilePath = BioConfigurationDir + "bioConfig.json";
                 var bioFile = new FileInfo(bioConfigFilePath);
-                if (bioFile.Exists && (DateTime.Now.Subtract(bioFile.LastWriteTime).Days < 1))
+
+                if (bioFile.Exists && (DateTime.Now.Subtract(bioFile.LastWriteTime).Days < 1) && EnableBioConfigCache)
                 {
                     string content = File.ReadAllText(bioConfigFilePath);
                     bioConfigData = JsonConvert.DeserializeObject<List<BioConfiguration>>(content);
@@ -30,7 +32,7 @@ namespace ControlGateway
                 {
                     using (HttpClient client = new HttpClient())
                     {
-                        Console.WriteLine($"Calling Bio Configuration API : {bioConfigFilePath}");
+                        Console.WriteLine($"Calling Bio Configuration API : {BioConfigurationApiUrl}");
                         client.BaseAddress = new Uri(BioConfigurationApiUrl);
                         MediaTypeWithQualityHeaderValue contentType = new MediaTypeWithQualityHeaderValue("application/json");
                         client.DefaultRequestHeaders.Accept.Add(contentType);
@@ -43,18 +45,21 @@ namespace ControlGateway
                         string content = response.Content.ReadAsStringAsync().Result;
                         bioConfigData = JsonConvert.DeserializeObject<List<BioConfiguration>>(content);
 
-                        try
+                        if (EnableBioConfigCache)
                         {
-                            using (StreamWriter sw = File.CreateText(bioConfigFilePath))
+                            try
                             {
-                                sw.WriteLine(content);
-                            }
+                                using (StreamWriter sw = File.CreateText(bioConfigFilePath))
+                                {
+                                    sw.WriteLine(content);
+                                }
 
-                            Console.WriteLine($"Writing to file finished : {bioConfigFilePath}");
-                        }
-                        catch (Exception EX)
-                        {
-                            Console.WriteLine($"Bio Config File Error : {EX.Message}");
+                                Console.WriteLine($"Writing to file finished : {bioConfigFilePath}");
+                            }
+                            catch (Exception EX)
+                            {
+                                Console.WriteLine($"Bio Config File Error : {EX.Message}");
+                            }
                         }
                     }
                 }

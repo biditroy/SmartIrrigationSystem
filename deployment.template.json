@@ -123,12 +123,14 @@
     },
     "ControlGateway": {
       "properties.desired": {
-        "CustomerID":"CSNEW",
-        "DeviceID":"DEVNEW",
+        "CustomerID":"CS00001",
+        "DeviceID":"DEV00001",
         "TemperatureThreshold": 30,
         "MoistureThreshold": 10,
+        "EnableBioConfigCache":true,
         "BioConfigurationDataDirectory":"/app/sis_data/",
-        "BioConfigurationApiUrl":"http://calibarhack21.azurewebsites.net/smartirrigationsystem/"
+        "BioConfigurationApiUrl":"https://caliber2021demotest.azurewebsites.net/api/smartirrigationdata/",
+        "PumpSpeedPerSecond":21
       }
     }
   }

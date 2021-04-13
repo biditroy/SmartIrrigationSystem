@@ -19,6 +19,8 @@ namespace ControlGateway
         static string bioConfigDataDir { get; set; } = "/app/sis_data/";
         static string bioConfigApiUrl { get; set; } = "";
         static double pumpSpeedPerSecond { get; set; } = 21;
+
+        static bool enableBioConfigCache { get; set; } = true;
         static void Main(string[] args)
         {
             Init().Wait();
@@ -89,8 +91,11 @@ namespace ControlGateway
                 if (desiredProperties["BioConfigurationApiUrl"] != null)
                     bioConfigApiUrl = desiredProperties["BioConfigurationApiUrl"];
 
-                    if (desiredProperties["PumpSpeedPerSecond"] != null)
+                if (desiredProperties["PumpSpeedPerSecond"] != null)
                     pumpSpeedPerSecond = desiredProperties["PumpSpeedPerSecond"];
+
+                if (desiredProperties["EnableBioConfigCache"] != null)
+                    enableBioConfigCache = desiredProperties["EnableBioConfigCache"];
 
             }
             catch (AggregateException ex)
@@ -131,6 +136,7 @@ namespace ControlGateway
                 {
                     biopro.BioConfigurationDir = bioConfigDataDir;
                     biopro.BioConfigurationApiUrl = bioConfigApiUrl;
+                    biopro.EnableBioConfigCache = enableBioConfigCache;
 
                     Console.WriteLine($"Dir: {biopro.BioConfigurationDir}, Api:{biopro.BioConfigurationApiUrl}]");
 
@@ -146,7 +152,7 @@ namespace ControlGateway
                                 var calculatedFlow = wc.GetWaterFlowDuration(incomingMessage.Temperature, incomingMessage.Humidity, incomingMessage.Moisture, bd);
                                 if (calculatedFlow > 0)
                                 {
-                                    Console.WriteLine($"Preparing for water for {calculatedFlow} sec(s)");
+                                    Console.WriteLine($"Preparing for sending control message to Water Valve module. Optimal Volume {bd.OptimalWaterVolumnInLitres} ltr");
                                     var tempData = new ControlMessageBody
                                     {
                                         FlowDuration = calculatedFlow,
@@ -157,7 +163,7 @@ namespace ControlGateway
                                         SourceTAG = "ControlGateway",
                                         CustomerID = customerId,
                                         DeviceID = deviceId,
-                                        PlantID = bd.PlanID
+                                        PlantID = bd.PlantID
                                     };
 
                                     string dataBuffer = JsonConvert.SerializeObject(tempData);

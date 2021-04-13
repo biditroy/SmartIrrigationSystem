@@ -127,8 +127,10 @@
         "DeviceID":"DEVNEW",
         "TemperatureThreshold": 30,
         "MoistureThreshold": 10,
+        "EnableBioConfigCache":true,
         "BioConfigurationDataDirectory":"/app/sis_data/",
-        "BioConfigurationApiUrl":"http://calibarhack21.azurewebsites.net/smartirrigationsystem/"
+        "BioConfigurationApiUrl":"http://calibarhack21.azurewebsites.net/smartirrigationsystem/",
+        "PumpSpeedPerSecond":21
       }
     }
   }

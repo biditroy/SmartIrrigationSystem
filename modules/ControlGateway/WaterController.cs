@@ -112,7 +112,7 @@ namespace ControlGateway
                 flowDuration = 0;
             }
 
-            return flowDuration;
+            return flowDuration * 1000;
         }
 
         public void Dispose()
